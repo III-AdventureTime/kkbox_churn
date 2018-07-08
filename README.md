@@ -16,7 +16,7 @@ $ cp -r template.yang your_task_name.your_name
         * `002.clean_members/`
 
 5. Describe your codes (in the beginning of code file, or in `description.md`)
-    + where and what the input data is
+    + where and what the input data are
     + what your codes do
     + output data:
         - data location
@@ -24,7 +24,7 @@ $ cp -r template.yang your_task_name.your_name
         - detailed description
 
 6. When ready to 'push' to GitHub:
-    1. edit `.gitignore` (in task folder) when necessary
+    1. edit `.gitignore` (in task folder) if necessary
     2. in folder `kkbox_churn/`, do the following:
 ```bash
 $ git add --all
