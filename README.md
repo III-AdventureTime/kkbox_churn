@@ -14,6 +14,7 @@ $ cp -r template.yang your_task_name.your_name
     - examples of `<XXX[.label]>/`
         * `001/`
         * `002.clean_members/`
+    - You can create the output folder early, so that other members know it is "occupied".
 
 5. Describe your codes (in the beginning of code file, or in `description.md`)
     + where and what the input data are
