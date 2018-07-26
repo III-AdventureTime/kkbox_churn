@@ -1,0 +1,42 @@
+00.dates_correction.ipynb
+    * Filter: transaction_date >= 2015-11-01
+    * Correction of dates:
+       + for non-cancel transactions:
+         [tr: transaction date 
+          st: start date (i.e., expiration date minus number of days of the subscription plan)
+          ex: expiration date]
+ 
+          - if tr <= st <= ex: no correction 
+          - if st < tr <= ex: (corrected start date) = tr
+          - if st <= ex < tr: (corrected start date) = (corrected expiration date) = null
+                              (The record is to be ignored/removed.)
+
+       + for cancels:
+         (Note. For cancels, expiration date means the adjusted/advanced expiration date
+          for the previous subscription.)
+          - if tr <= ex: no correction
+          - if ex < tr: (corrected expiration date) = tr
+
+
+01.find_problematic_members.ipynb
+    Find members who has >= 3 transaction records on one date, of which at least one is 
+    non-cancel and at least one is a cancel. Those transactions might be more difficult to
+    handle.
+
+
+02.exclude_problematic_members.ipynb
+    * Remove all records of problematic members.
+    * Filter: corrected expiration date != null.
+    * Add "tid" (transaction id).
+
+
+03.subscription_periods.ipynb
+    * Shorten the subscriptions (corrected start day, corrected expiration day) that are 
+      affected by cancels. The results are called "(effective) subscription periods".
+    * Also find indeterminate periods (within which the state of subscription cannot be
+      determined, due to one cancel and one non-cancel transaction on the same date).
+    * The output has columns "msno", "tid", "start_date", "end_date". 
+       + If a record is a subscription period, "tid" is the normal transaction id (in the 
+         output of previous).
+       + If a record is an indeterminate period, "tid" is "indeterm".
+
