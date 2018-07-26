@@ -40,3 +40,12 @@
          output of previous).
        + If a record is an indeterminate period, "tid" is "indeterm".
 
+
+10.prepare_subscrip-periods_for_feature-creation.ipynb
+    * join with train.csv
+    * remove members with indeterminate dates after 2016-10-01
+    * remove members with latest end_date < 2017-01-01
+    * remove records with end_date < 2016-10-01
+
+
+
