@@ -9,9 +9,9 @@ if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
     df0 = spark.read.format('parquet').load(infile)
-    df1 = df0.where(col('has_expired') & col('auto_renew_mode'))
+    df1 = df0.where(col('has_expired') & ~col('auto_renew_mode'))
     
-    df1.write.format('parquet').save(dir0 + 'all-features_has-expired_auto-renew-1')
+    df1.write.format('parquet').save(dir0 + 'all-features_has-expired_auto-renew-0')
     
 ## END ##
 

@@ -46,7 +46,7 @@ def to_int(v_str):
 if __name__ == "__main__":
     dir0 = 'file:///home/cloudera/2.kkbox_churn/data01/big_table_01/'
     infile = dir0 + 'all_features'
-    outfile = dir0 + 'temp' #'all_features.cleaned'
+    outfile = dir0 + 'all_features.cleaned'
 
     ##
     spark = SparkSession.builder.getOrCreate()
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 
         elif block_no(c) in [1,3,5,7,9,11]:
             if c.endswith('Mtotal') or c.endswith('WeekOnLine'):
-                cc = col(c).cast('int').alias(c)
+                cc = when(col(c).isNull(), 0).otherwise(col(c).cast('int')).alias(c)
             else:
                 cc = udf_to_int(col(c)).alias(c)
             
