@@ -12,7 +12,7 @@ def subtract_one_day(date_str):
     return t.strftime('%Y-%m-%d')
 
 def find_indeterminate_period(tinfo1, tinfo2):
-    tinfo_cancel, tinfo_noncancel = (tinfo1, tinfo2)  if tinfo1[2] == 'true'  else (tinfo2, tinfo1)
+    tinfo_cancel, tinfo_noncancel = (tinfo1, tinfo2)  if tinfo1[2] == '1'  else (tinfo2, tinfo1)
     dc = tinfo_cancel[4]
     if dc >= tinfo_noncancel[4]:
         return None
@@ -39,7 +39,7 @@ def reduce_subscription_periods(subscrip_periods, cut_date):
 
 def has_no_cancel(tinfo_records):
     r = True
-    for is_cancel in map(lambda info_rec: info_rec[2]=='true', tinfo_records):
+    for is_cancel in map(lambda info_rec: info_rec[2]=='1', tinfo_records):
         if is_cancel:
             r = False
             break
@@ -68,7 +68,7 @@ def reduce_trans_infos(trans_infos_strlist):
     trans_dates_w_cancel_s = set()
     last_trans_date = '1970-01-01'
     for tinfos in trans_infos:
-        if tinfos[2] == 'true':
+        if tinfos[2] == '1':
             trans_dates_w_cancel_s.add(tinfos[1])
         if tinfos[1] > last_trans_date:
             last_trans_date = tinfos[1]
@@ -116,7 +116,7 @@ def reduce_trans_infos(trans_infos_strlist):
         subscrip_periods_1 = [(tinfo[0], tinfo[3], tinfo[4])  for tinfo in tinfos_pre_last_date]
             
         ## find whether there is non-cancel transaction on the last transaction date
-        has_non_cancel = any([tinfo[2]=='false'  for tinfo in tinfos[ind_pre_last_date+1:]])
+        has_non_cancel = any([tinfo[2]=='0'  for tinfo in tinfos[ind_pre_last_date+1:]])
         
         ##
         indet_period = None
