@@ -1,0 +1,90 @@
+---
+title: "Random Forests"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Read Data 
+```{r}
+dir0 = '/Users/mani/Dropbox/IIIBigDataClass_DataSync/_project/kkbox_churn_R/'
+
+dir_train = paste(dir0, '/21a.train.field-select2_categ-transformed/', sep='')
+dir_test = paste(dir0, '/21b.test.field-select2_categ-transformed/', sep='')
+
+file = 'data02_pc-29.csv'
+
+df0_train = read.csv(paste(dir_train, file, sep=''), header=T, sep=",")
+df0_test = read.csv(paste(dir_test, file, sep=''), header=T, sep=",")
+```
+
+```{r}
+# fields handling / selection 
+df0_train$X = NULL
+# df0_train$registered_via = as.factor(df0_train$registered_via)
+df0_train$is_churn = NULL
+
+df0_test$X = NULL
+# df0_test$registered_via = as.factor(df0_test$registered_via)
+df0_test$is_churn = NULL
+```
+
+```{r}
+# levels(df0_train$registered_via)
+# levels(df0_test$registered_via)
+```
+
+
+```{r}
+str(df0_train)
+```
+
+
+## random forest
+```{r}
+library(randomForest)
+fit = randomForest(my_is_churn~., data=df0_train, importance=T, proximity=T, ntree=100)
+```
+
+```{r}
+print(fit)
+```
+
+```{r}
+tb = fit$confusion
+accuracy = sum(diag(tb))/sum(tb)
+cat('on train set:\n')
+print(tb)
+cat('\naccuracy=', accuracy, '\n')
+```
+
+```{r}
+predictions = predict(fit, df0_test)
+tb = table(df0_test$my_is_churn, predictions)
+accuracy = sum(diag(tb))/sum(tb)
+cat('on test set:\n')
+print(tb)
+cat('\naccuracy=', accuracy, '\n')
+```
+
+```{r}
+# ROC curve
+library(ROCR)
+prob = predict(fit, df0_test, type='prob')[,2]
+pred = prediction(prob, labels=df0_test$my_is_churn)
+perf = performance(pred, 'tpr', 'fpr')
+plot(perf)
+```
+
+
+
+
+
+
+

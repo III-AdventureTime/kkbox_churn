@@ -1,0 +1,170 @@
+---
+title: "PCA"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## read data
+```{r}
+dir0 = '/Users/mani/Dropbox/IIIBigDataClass_DataSync/_project/kkbox_churn_R/'
+dir_train = paste(dir0, '21a.train.field-select2_categ-transformed/', sep='')
+dir_test = paste(dir0, '21b.test.field-select2_categ-transformed/', sep='')
+
+df0_train = read.csv(paste(dir_train, 'data00.csv', sep=''), header=T, sep=",")
+df0_test = read.csv(paste(dir_test, 'data00.csv', sep=''), header=T, sep=",")
+```
+
+## select fields (via decision tree)
+```{r}
+cols = c('last_paid_per_day', 'pay_method_mode', 'last4WeekOnLine', 
+         'last_plan_days', 'days_since_init_regist', 'gaps_count', 
+         'registered_via', 'w4_Mtotal', 'auto_renew_mode', 
+         'w4_M985', 'w4_M75', 'w4_M25', 
+         'city', 'w4_M985_D_Mtotal', 'pay_method_cnt_uniq',
+         'my_is_churn', 'is_churn')
+
+df1_train = df0_train[,cols]
+df1_test = df0_test[,cols]
+
+# correct field type
+df1_train$registered_via = as.factor(df1_train$registered_via)
+df1_test$registered_via = as.factor(df1_test$registered_via)
+
+#
+str(df1_train)
+```
+
+## deal with na
+```{r}
+df1_train = df1_train[!is.na(df1_train$w4_M985_D_Mtotal),]
+df1_test = df1_test[!is.na(df1_test$w4_M985_D_Mtotal),]
+```
+
+## histograms of numeric fields (training set)
+```{r}
+df1 = df1_train
+
+par(mfrow=c(2,2))
+hist(df1$last_paid_per_day, breaks=30)
+hist(df1$last4WeekOnLine, breaks=30)
+hist(log(df1$last_plan_days+1), breaks=30)
+hist(log(df1$days_since_init_regist+1), breaks=30)
+#min(df1$last_plan_days)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(df1$gaps_count, breaks=30)
+hist(log(df1$w4_Mtotal+1), breaks=30)
+hist(df1$w4_M985, breaks=30)
+hist(log(df1$w4_M75+1), breaks=30)
+#min(df1$w4_Mtotal)
+```
+
+```{r}
+par(mfrow=c(2,2))
+hist(log(df1$w4_M25+0.01), breaks=30)
+hist(log(df1$w4_M985_D_Mtotal+0.01), breaks=30)
+hist(log(df1$pay_method_cnt_uniq+0.01), breaks=30)
+#min(df1$w4_Mtotal)
+
+rm(df1)
+```
+
+## log transform
+```{r}
+log_transformed = function(df) {
+  df$last_plan_days = log(df$last_plan_days+1)
+  df$days_since_init_regist = log(df$days_since_init_regist+1)
+  df$w4_Mtotal = log(df$w4_Mtotal+1)
+  df$w4_M75 = log(df$w4_M75+1)
+  df$w4_M25 = log(df$w4_M25+0.01)
+  df$w4_M985_D_Mtotal = log(df$w4_M985_D_Mtotal+0.01)
+  df$pay_method_cnt_uniq = log(df$pay_method_cnt_uniq+0.01)
+  return(df)
+}
+
+df1_train = log_transformed(df1_train)
+df1_test = log_transformed(df1_test)
+```
+
+```{r}
+# output
+file = 'data01_decis-tree-selected_log-transf.csv'
+write.csv(df1_train, file=paste(dir_train, file, sep=''), sep=",")
+write.csv(df1_test, file=paste(dir_test, file, sep=''), sep=",")
+```
+
+
+## get subset without Y
+```{r}
+df1_train_no_y = df1_train[, ! names(df1_train) %in% c('my_is_churn', 'is_churn')]
+df1_test_no_y = df1_test[, ! names(df1_train) %in% c('my_is_churn', 'is_churn')]
+```
+
+## one-hot encoding
+```{r}
+library(dummies)
+categ_columns = c('pay_method_mode', 'registered_via', 'auto_renew_mode', 'city')
+
+df2_train = dummy.data.frame(df1_train_no_y, names=categ_columns)
+df2_test = dummy.data.frame(df1_test_no_y, names=categ_columns)
+
+str(df2_train)
+```
+
+## PCA on training set
+```{r}
+pca = prcomp(df2_train, center=T, scale.=T)
+```
+
+```{r}
+#print(pca1)
+plot(pca, type='l')
+```
+
+```{r}
+summary(pca)
+```
+
+
+```{r}
+var = (pca$sdev)^2
+
+# proportion of variance explained:
+prop_var = var/sum(var)
+
+plot(cumsum(prop_var), xlab="principal component", ylab="cumulative proportion of variance explained", type="b")
+```
+
+```{r}
+# keep 95% variance
+Npc_select = 29
+```
+
+## transformation by PCA
+```{r}
+# training set:
+mat_pcs_train = pca$x[,1:Npc_select]
+
+# test set:
+mat_pcs_test = predict(pca, newdata=df2_test)[,1:Npc_select]
+```
+
+## add Y
+```{r}
+mat_pcs_train = cbind(mat_pcs_train, df1_train[,c('my_is_churn', 'is_churn')])
+mat_pcs_test = cbind(mat_pcs_test, df1_test[,c('my_is_churn', 'is_churn')])
+```
+
+## output
+```{r}
+write.csv(mat_pcs_train, file=paste(dir_train, 'data02_pc-29.csv', sep=''), sep=",")
+write.csv(mat_pcs_test, file=paste(dir_test, 'data02_pc-29.csv', sep=''), sep=",")
+```

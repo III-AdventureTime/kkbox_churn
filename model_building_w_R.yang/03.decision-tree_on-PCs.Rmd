@@ -1,0 +1,125 @@
+---
+title: "decision tree"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Data 
+## Read Data 
+```{r}
+dir0 = '/Users/mani/Dropbox/IIIBigDataClass_DataSync/_project/kkbox_churn_R/'
+
+dir_train = paste(dir0, '/21a.train.field-select2_categ-transformed/', sep='')
+dir_test = paste(dir0, '/21b.test.field-select2_categ-transformed/', sep='')
+
+file = 'data02_pc-29.csv'
+
+df0_train = read.csv(paste(dir_train, file, sep=''), header=T, sep=",")
+df0_test = read.csv(paste(dir_test, file, sep=''), header=T, sep=",")
+
+names(df0_train)
+```
+
+```{r}
+# fields handling / selection 
+df0_train$X = NULL
+df0_test$X = NULL
+
+df0_train$is_churn = NULL  # use my_is_churn
+df0_train$is_churn = NULL  # use my_is_churn
+```
+
+```{r}
+str(df0_train)
+```
+
+# utilities
+```{r}
+print_confusion_mat_et_accuracies = function(fit, train_set, test_set, depend_var, predict_type) {
+  cat('on training set:\n\n')
+  predictions = predict(fit, train_set, type=predict_type)
+  tb = table(train_set[,depend_var], predictions)
+  accuracy = sum(diag(tb))/sum(tb)
+  print(tb)
+  cat('\naccuracy=', accuracy, '\n')
+  
+  #
+  cat('on test set:\n\n')
+  predictions = predict(fit, test_set, type=predict_type)
+  tb = table(test_set[,depend_var], predictions)
+  accuracy = sum(diag(tb))/sum(tb)
+  print(tb)
+  cat('\naccuracy=', accuracy, '\n')  
+}
+```
+
+
+# Decision Tree
+## rpart (CART)
+```{r}
+library(rpart)
+fit = rpart(my_is_churn~.,
+            control=rpart.control(minsplit=30, cp=0.002),
+            data=df0_train)
+plot(fit, uniform=T, margin=0.1)
+text(fit, all=T, use.n=T, cex=0.8)
+```
+
+```{r}
+print_confusion_mat_et_accuracies(fit, df0_train, df0_test, 'my_is_churn', 'class')
+```
+
+```{r message=FALSE}
+# ROC curve
+library(ROCR)
+prob = predict(fit, df0_test, type='prob')[,2]
+pred = prediction(prob, labels=df0_test$my_is_churn)
+perf = performance(pred, 'tpr', 'fpr')
+plot(perf)
+```
+
+
+### variable importance
+```{r}
+fit$variable.importance
+```
+
+
+
+## ctree
+```{r message=FALSE}
+# remove records with NA
+# filter_out = is.na(df0_train$w1_M75_D_Mtotal)
+# train_set = df0_train[!filter_out,]
+# 
+# filter_out = is.na(df0_test$w1_M75_D_Mtotal)
+# test_set = df0_test[!filter_out,]
+
+#
+library(partykit)
+fit = ctree(my_is_churn~., data=df0_train)
+
+# plot to file
+# png(paste(dir_train, "ctree.png", sep=''), res=80, height=800, width=2400) 
+# plot(fit, gp=gpar(fontsize = 8), inner_panel=node_inner, ip_args=list(pval=F, id=F))
+# dev.off()
+
+#
+print_confusion_mat_et_accuracies(fit, df0_train, df0_test, 'my_is_churn', predict_type='response')
+```
+
+```{r}
+# ROC curve
+# library(ROCR)
+# prob = predict(fit, test_set, type='prob')[,2]
+# pred = prediction(prob, labels=test_set$my_is_churn)
+# perf = performance(pred, 'tpr', 'fpr')
+# plot(perf)
+```

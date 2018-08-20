@@ -1,0 +1,80 @@
+---
+title: "SVM Classification on PCs"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Read Data 
+```{r}
+# dir0 = '/Users/mani/Dropbox/IIIBigDataClass_DataSync/_project/kkbox_churn_R/'
+dir0 = 'C:/Users/Big data/Dropbox/IIIBigDataClass_DataSync/_project/kkbox_churn_R/'
+
+dir_train = paste(dir0, '/21a.train.field-select2_categ-transformed/', sep='')
+dir_test = paste(dir0, '/21b.test.field-select2_categ-transformed/', sep='')
+
+file = 'data02_pc-29.csv'
+
+df0_train = read.csv(paste(dir_train, file, sep=''), header=T, sep=",")
+df0_test = read.csv(paste(dir_test, file, sep=''), header=T, sep=",")
+```
+
+
+```{r}
+# fields handling / selection 
+df0_train$X = NULL
+# df0_train$registered_via = as.factor(df0_train$registered_via)
+df0_train$is_churn = NULL
+
+df0_test$X = NULL
+# df0_test$registered_via = as.factor(df0_test$registered_via)
+df0_test$is_churn = NULL
+```
+
+```{r}
+str(df0_train)
+```
+
+
+## SVM classification
+```{r message=FALSE}
+library(e1071)
+fit = svm(my_is_churn~., data=df2_train)
+```
+
+```{r}
+summary(fit)
+```
+
+```{r results='hold'}
+pred = predict(fit, newdata=df2_train, type='response')
+tb = table(df2_train$my_is_churn, pred)
+accuracy = sum(diag(tb))/sum(tb)
+sensitivity = tb[2,2]/(tb[2,1]+tb[2,2])
+precision = tb[2,2]/(tb[1,2]+tb[2,2])
+cat('on train set:\n')
+print(tb)
+cat('accuracy =', accuracy, '\n')
+cat('sensitivity =', sensitivity, '\n')
+cat('precision =', precision, '\n')
+```
+
+```{r results='hold'}
+pred = predict(fit, newdata=df2_test, type='response')
+tb = table(df2_test$my_is_churn, pred)
+accuracy = sum(diag(tb))/sum(tb)
+sensitivity = tb[2,2]/(tb[2,1]+tb[2,2])
+precision = tb[2,2]/(tb[1,2]+tb[2,2])
+cat('on test set:\n')
+print(tb)
+cat('accuracy =', accuracy, '\n')
+cat('sensitivity =', sensitivity, '\n')
+cat('precision =', precision, '\n')
+```
+
